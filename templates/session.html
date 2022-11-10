@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <title>Flask_Chatting_Application</title>
+  </head>
+  <body>
+    <h3 style='color: #ccc;font-size: 30px;'>No message yet..</h3>
+    <div class="message_holder"></div>
+    <form action="" method="POST">
+      <input type="text" class="username" style='font-size:15px;width:100px' placeholder="User Name"/>
+      <input type="text" class="message" style='font-size:15px;width:300px' placeholder="Messages"/>
+      <input type="submit"/>
+    </form>
+
+    <br><br>
+    <table>
+      {% for x in range(3) %}
+        <tr>
+        {% for i in range(5) %}
+          <td><div id="x{{x}}a{{i}}" class="xxbox" style="width:150px;height:100px;background-color:green;"></div></td>
+        {% endfor %}
+        </tr>
+      {% endfor %}
+    </table>
+
+    <br><br>
+    <table>
+      {% for x in range(2) %}
+        <tr>
+        {% for i in range(5) %}
+          <td><div id="xx{{x}}a{{i}}" class="xbox" style="width:150px;height:50px;background-color:green;" contenteditable="true"></div></td>
+        {% endfor %}
+        </tr>
+      {% endfor %}
+    </table>
+
+    <script src="{{ url_for('static', filename='jquery.js') }}" ></script>
+    <script src="{{ url_for('static', filename='socket.io.js') }}" ></script>
+    <script type="text/javascript">
+      var socket = io.connect('http://' + document.domain + ':' + location.port);
+      console.log('io.connect - http://' + document.domain + ':' + location.port);
+
+      socket.on( 'connect', function() {
+        socket.emit( 'my event', {
+          data: 'User Connected'
+        } )
+        var form = $( 'form' ).on( 'submit', function( e ) {
+          e.preventDefault()
+          let user_name = $( 'input.username' ).val()
+          let user_input = $( 'input.message' ).val()
+          socket.emit( 'my event', {
+            user_name : user_name,
+            message : user_input
+          } )
+          $( 'input.message' ).val( '' ).focus()
+        } )
+        var xbox_click = $( 'div.xbox' ).on( 'blur', function( e ) {
+          e.preventDefault()
+          socket.emit( 'div blur event', {
+            div_id : this.id,
+            message : $(this).text()
+          } )
+        } )
+        var xbox_click = $( 'div.xxbox' ).on( 'click', function( e ) {
+          e.preventDefault()
+          var t_col = $(this).css("background-color");
+          console.log( t_col )
+          if (t_col == "rgb(0, 128, 0)"){
+            var c_col = "orange";
+          }else{
+            var c_col = "green";
+          }
+          socket.emit( 'div click event', {
+            div_id : this.id,
+            color : c_col
+          } )
+        } )
+      } )
+      socket.on( 'my response', function( msg ) {
+        console.log( msg )
+        if( typeof msg.user_name !== 'undefined' ) {
+          $( 'h3' ).remove()
+          $( 'div.message_holder' ).append( '<div><b style="color: #000">'+msg.user_name+'</b> '+msg.message+'</div>' )
+        }
+      })
+      socket.on( 'div click response', function( msg ) {
+        console.log( msg )
+        if( typeof msg.div_id !== 'undefined' ) {
+          $("#"+msg.div_id).css("background-color", msg.color);
+        }
+      })
+      socket.on( 'div blur response', function( msg ) {
+        console.log( msg )
+        if( typeof msg.div_id !== 'undefined' ) {
+          $("#"+msg.div_id).text(msg.message);
+          var d_col = $("#"+msg.div_id).text();
+          console.log( d_col )
+          if ( d_col !== "" ){
+            $("#"+msg.div_id).css("background-color", "orange");
+           }else{
+            $("#"+msg.div_id).css("background-color", "green");
+           }
+        }
+      })
+    </script>
+
+  </body>
+  </html>
